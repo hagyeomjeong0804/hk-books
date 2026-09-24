@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>하겸의 책장 - 대기 접수 및 리더</title>
+
+  <!-- PWA 필수 매니페스트 및 웹앱 설정 -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#181825">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="책장대기">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+  <style>
+    :root {
+      --bg: #181825;
+      --card-bg: #1e1e2e;
+      --accent: #f9e2af; /* 전광판 강조색 */
+      --brand: #cba6f7;
+      --brand-hover: #b4befe;
+      --text: #cdd6f4;
+      --reader-bg: #f5e0dc;
+      --reader-text: #11111b;
+    }
+
+    * { 
+      box-sizing: border-box; 
+    }
+
+    body {
+      margin: 0; 
+      padding: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 { 
+      color: var(--brand); 
+      margin: 0 0 12px 0; 
+      font-size: 1.8em;
+    }
+    
+    /* PWA 앱 설치 버튼 (beforeinstallprompt 감지 시 스크립트로 표시) */
+    #install-btn {
+      display: none;
+      background: var(--brand);
+      color: #11111b;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 0.95em;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 16px;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(203, 166, 247, 0.25);
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    #install-btn:hover {
+      background: var(--brand-hover);
+    }
+
+    #install-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* 실시간 대기 현황 전광판 */
+    .status-board {
+      background: #11111b;
+      border: 2px solid var(--accent);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 24px;
+      box-shadow: 0 0 20px rgba(249, 226, 175, 0.15);
+    }
+
+    .status-number {
+      font-size: 2.8em;
+      font-weight: bold;
+      color: var(--accent);
+      margin: 8px 0;
+    }
+
+    /* 대기 등록 카드 폼 */
+    .form-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid #313244;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.9em;
+      color: #a6adc8;
+    }
+
+    input[type="text"], input[type="tel"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #45475a;
+      background: #313244;
+      color: var(--text);
+      font-size: 1em;
+      outline: none;
+    }
+
+    input[type="text"]:focus, input[type="tel"]:focus {
+      border-color: var(--brand);
+    }
+
+    .file-label {
+      display: block;
+      background: #313244;
+      color: var(--text);
+      padding: 14px;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      border: 1px dashed var(--brand);
+      transition: background 0.2s ease;
+    }
+
+    .file-label:hover {
+      background: #45475a;
+    }
+
+    input[type="file"] { 
+      display: none; 
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: var(--brand);
+      color: #11111b;
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 1.05em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .submit-btn:hover {
+      background: var(--brand-hover);
+    }
+
+    /* 내 대기 티켓 리스트 */
+    .waiting-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .waiting-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      border-left: 5px solid var(--accent);
+      border-top: 1px solid #313244;
+      border-right: 1px solid #313244;
+      border-bottom: 1px solid #313244;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .wait-info h4 { 
+      margin: 0 0 4px 0; 
+      font-size: 1.1em; 
+    }
+
+    .wait-info p { 
+      margin: 0; 
+      font-size: 0.85em; 
+      color: #a6adc8; 
+    }
+
+    .enter-btn {
+      background: #a6e3a1;
+      color: #11111b;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .enter-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* 독서 뷰어 레이어 (기본 숨김) */
+    #reader-view {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--reader-bg);
+      color: var(--reader-text);
+      flex-direction: column;
+      z-index: 1000;
+    }
+
+    .reader-header {
+      padding: 14px 20px;
+      background: rgba(0, 0, 0, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .close-btn {
+      background: none; 
+      border: none; 
+      font-size: 1.1em; 
+      font-weight: bold; 
+      cursor: pointer; 
+      color: var(--reader-text);
+    }
+
+    .reader-content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      font-size: 1.1em;
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>🍽️ 하겸의 책장 대기 접수</h1>
+      
+      <!-- PWA 전용 설치 버튼 -->
+      <button id="install-btn">📲 앱으로 설치하기</button>
+    </header>
+
+    <!-- 1. 실시간 대기 현황 전광판 -->
+    <div class="status-board">
+      <div>현재 대기 중인 팀</div>
+      <div class="status-number" id="total-waiting-count">0팀</div>
+      <small style="color: #a6adc8;">예상 대기 시간: 약 <span id="estimated-time">0</span>분</small>
+    </div>
+
+    <!-- 2. 대기 등록 폼 -->
+    <div class="form-card">
+      <h3 style="margin-top:0;">📝 대기 등록하기</h3>
+      
+      <div class="form-group">
+        <label>입장자 성함</label>
+        <input type="text" id="user-name" placeholder="성함을 입력하세요">
+      </div>
+
+      <div class="form-group">
+        <label>연락처</label>
+        <input type="tel" id="user-phone" placeholder="010-0000-0000">
+      </div>
+
+      <div class="form-group">
+        <label>읽을 도서 선택 (텍스트 파일 업로드)</label>
+        <label class="file-label" id="file-label-text">
+          📄 도서 파일(.txt) 선택하기
+          <input type="file" id="book-file" accept=".txt">
+        </label>
+      </div>
+
+      <button class="submit-btn" onclick="registerWaiting()">대기 번호표 발급받기</button>
+    </div>
+
+    <!-- 3. 내 대기 티켓 목록 -->
+    <h3 style="margin-bottom: 12px;">🎫 내 대기 현황</h3>
+    <div class="waiting-list" id="my-waiting-list">
+      <!-- 대기 접수된 카드들이 스크립트로 추가됩니다 -->
+    </div>
+  </div>
+
+  <!-- 4. 독서 전용 뷰어 -->
+  <div id="reader-view">
+    <div class="reader-header">
+      <span id="reader-title" style="font-weight: bold;">도서 제목</span>
+      <button class="close-btn" onclick="closeReader()">✕ 퇴장하기</button>
+    </div>
+    <div class="reader-content" id="reader-content" onscroll="saveProgress()">
+      <!-- 도서 내용이 출력되는 공간 -->
+    </div>
+  </div>
+
+  <!-- 메인 스크립트 파일 연결 -->
+  <script src="/app.js"></script>
+</body>
+</html>

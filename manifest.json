@@ -1,0 +1,15 @@
+{
+  "short_name": "책장대기",
+  "name": "하겸의 책장 대기 접수 리더",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/f9e2af/181825?text=WAIT",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#181825",
+  "theme_color": "#181825",
+  "display": "standalone"
+}
